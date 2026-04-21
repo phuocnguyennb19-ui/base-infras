@@ -1,0 +1,36 @@
+# ==============================================================================
+# DNS & SSL CONFIGURATION - FULL CAPACITY
+# ==============================================================================
+route53:
+  enabled: false
+  domain_name: "dev.platform.internal"
+  
+  # Hosted Zone advanced settings
+  # create_zone: true
+  # comment: "Managed core infrastructure zone"
+  # force_destroy: false
+  
+  # Delegation & Networking
+  # vpc_association: true
+  # delegation_set_id: ""
+
+acm:
+  enabled: false
+  domain_name: "platform.dev.example.com"
+  validation_method: "DNS"
+  
+  # Certificate options
+  # subject_alternative_names: 
+  #   - "*.dev.example.com"
+  #   - "*.internal.dev.example.com"
+  
+  # Advanced Validation
+  # wait_for_validation: true
+  # validation_timeout: "45m"
+  # dns_ttl: 60
+  
+  # Compliance & Tags
+  # certificate_transparency_logging_preference: "ENABLED"
+  tags:
+    Layer: "Security"
+    Component: "Certificates"

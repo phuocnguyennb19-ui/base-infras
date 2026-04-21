@@ -1,0 +1,48 @@
+# ==============================================================================
+# SECURITY & ENCRYPTION CONFIGURATION - FULL CAPACITY
+# ==============================================================================
+kms:
+  enabled: true
+  alias: "alias/dev-platform-core-key"
+  
+  # Key Protection & Lifecycle
+  deletion_window_in_days: 7
+  enable_key_rotation: true
+  
+  # Access Control (ARNs)
+  # key_administrators: ["arn:aws:iam::123456789012:role/admin"]
+  # key_users: ["arn:aws:iam::123456789012:role/app-executor"]
+  # key_service_roles: ["ecs.amazonaws.com"]
+
+secrets_manager:
+  enabled: true
+  secret_name: "dev/core/foundational-secrets"
+  
+  # Secret Engine settings
+  # recovery_window_in_days: 7
+  # force_overwrite_replica_secret: false
+
+  # Rotation (Advanced)
+  # enable_rotation: false
+  # rotation_lambda_arn: ""
+  # rotation_rules:
+  #   automatically_after_days: 30
+
+s3:
+  enabled: true
+  bucket_name: "dev-core-platform-assets"
+  versioning: true
+  
+  # S3 Hardening
+  # block_public_acls: true
+  # block_public_policy: true
+  # ignore_public_acls: true
+  # restrict_public_buckets: true
+  
+  # Encryption & Compliance
+  # server_side_encryption_configuration:
+  #   rule:
+  #     apply_server_side_encryption_by_default:
+  #       sse_algorithm: "aws:kms"
+  # object_lock_enabled: false
+  # force_destroy: false

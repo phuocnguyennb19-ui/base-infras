@@ -1,0 +1,36 @@
+# ==============================================================================
+# IDENTITY & ACCESS CONFIGURATION (IAM) - FULL CAPACITY
+# ==============================================================================
+iam:
+  enabled: true
+  
+  # Core Platform Roles (ECS, RDS, S3)
+  create_service_roles: true
+  
+  # Group & User Management
+  # create_group: true
+  # group_name: "admin-developers"
+  # create_user: false
+  # user_name: "platform-bot"
+
+  # Managed Policy Attachments
+  # admin_policy_arn: "arn:aws:iam::aws:policy/AdministratorAccess"
+  # readonly_policy_arn: "arn:aws:iam::aws:policy/ReadOnlyAccess"
+  
+  # Boundary & Security
+  # permissions_boundary_arn: ""
+  # force_detach_policies: false
+  # path: "/"
+
+  # Custom Roles & Policies
+  # custom_role_name: "dev-specific-worker-role"
+  # custom_role_policies:
+  #   - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+  #   - "arn:aws:iam::aws:policy/CloudWatchFullAccess"
+
+  # Security Compliance
+  # enable_mfa: true # Thường quản lý ở cấp Org/Account
+  # password_policy:
+  #   minimum_password_length: 16
+  #   require_symbols: true
+  #   require_numbers: true

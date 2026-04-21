@@ -1,0 +1,32 @@
+# ==============================================================================
+# CONTAINER REGISTRY CONFIGURATION (ECR) - FULL CAPACITY
+# ==============================================================================
+ecr:
+  enabled: true
+  
+  # List of registries for core services
+  repository_names: 
+    - "core-backend-api"
+    - "core-frontend-web"
+    - "worker-engine"
+    - "admin-portal"
+
+  # Image Integrity & Security
+  image_tag_mutability: "MUTABLE" # Recommend "IMMUTABLE" for production
+  scan_on_push: true
+  encryption_type: "KMS" # Or "AES256"
+  # kms_key_arn: null # If null, uses default AWS ECR key
+  
+  # Advanced Lifecycle Management
+  # lifecycle_policy:
+  #   keep_last_images_count: 30
+  #   expire_untagged_images: true
+  #   untagged_image_retention_days: 14
+
+  # Registry Permissions
+  # repository_read_write_access_arns: []
+  # repository_read_access_arns: []
+
+  # Replication & Pull-thru Cache
+  # create_pull_through_cache_rules: false
+  # replication_configurations: []
