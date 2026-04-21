@@ -1,50 +1,106 @@
-name: "Infrastructure Foundation Deploy"
+name: "Prod CI/CD - Infrastructure Foundation"
 
 on:
   push:
     branches: [ "master" ]
     paths:
-      - 'infrastructure/**'
-      - 'modules/**'
-      - 'platform_config.yml'
-  pull_request:
-    branches: [ "master" ]
-    paths:
-      - 'infrastructure/**'
-      - 'modules/**'
+      - 'deployments/**'
+      - 'engine/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
-  terraform:
-    name: "Terraform Infrastructure"
+  # ----------------------------------------------------------------------------
+  # STAGE 1: IDENTIFY CHANGES
+  # ----------------------------------------------------------------------------
+  detect:
+    name: "Identify Target"
     runs-on: ubuntu-latest
-    env:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
+    outputs:
+      env: ${{ steps.parse.outputs.env }}
+      service: ${{ steps.parse.outputs.service }}
+      file_path: ${{ steps.parse.outputs.file_path }}
+      has_changes: ${{ steps.parse.outputs.has_changes }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - id: parse
+        run: |
+          FILES=$(git diff --name-only HEAD^ HEAD | grep "deployments/" | head -n 1)
+          if [[ -z "$FILES" ]]; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          
+          # Ví dụ: deployments/dev/infrastructure/vpc.yml
+          ENV=$(echo $FILES | cut -d'/' -f2)
+          SERVICE=$(basename $FILES .yml)
+          echo "env=$ENV" >> $GITHUB_OUTPUT
+          echo "service=$SERVICE" >> $GITHUB_OUTPUT
+          echo "file_path=$FILES" >> $GITHUB_OUTPUT
+          echo "has_changes=true" >> $GITHUB_OUTPUT
 
-      - name: Setup Terraform
+  # ----------------------------------------------------------------------------
+  # STAGE 2: PLAN (Dry Run)
+  # ----------------------------------------------------------------------------
+  plan:
+    name: "CD - Terraform Plan"
+    needs: detect
+    if: needs.detect.outputs.has_changes == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Setup Terraform"
         uses: hashicorp/setup-terraform@v3
+      - name: "Terraform Plan"
+        run: |
+          cd engine
+          STATE_KEY="${{ needs.detect.outputs.env }}/infrastructure/${{ needs.detect.outputs.service }}/terraform.tfstate"
+          terraform init -backend-config="key=$STATE_KEY"
+          terraform plan -out=tfplan \
+            -var="common_config_path=../deployments/${{ needs.detect.outputs.env }}/common.yml" \
+            -var="config_path=../${{ needs.detect.outputs.file_path }}"
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          
+      - name: "Upload Plan Artifact"
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-infra-${{ needs.detect.outputs.service }}
+          path: engine/tfplan
 
-      - name: Terraform Format
-        run: terraform fmt -check
-        working-directory: ./engine
+  # ----------------------------------------------------------------------------
+  # STAGE 3: APPLY (Deployment with Approval)
+  # ----------------------------------------------------------------------------
+  deploy:
+    name: "CD - Terraform Apply"
+    needs: [detect, plan]
+    runs-on: ubuntu-latest
+    environment: ${{ needs.detect.outputs.env }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: "Download Plan Artifact"
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan-infra-${{ needs.detect.outputs.service }}
+          path: engine/
 
-      - name: Terraform Init
-        run: terraform init -backend-config=backend.hcl
-        working-directory: ./engine
-
-      - name: Terraform Validate
-        run: terraform validate
-        working-directory: ./engine
-
-      - name: Terraform Plan
-        run: terraform plan -no-color -input=false
-        working-directory: ./engine
-
-      - name: Terraform Apply
-        if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-        run: terraform apply -auto-approve -input=false
-        working-directory: ./engine
+      - name: "Setup Terraform"
+        uses: hashicorp/setup-terraform@v3
+      - name: "Terraform Apply"
+        run: |
+          cd engine
+          STATE_KEY="${{ needs.detect.outputs.env }}/infrastructure/${{ needs.detect.outputs.service }}/terraform.tfstate"
+          terraform init -backend-config="key=$STATE_KEY"
+          terraform apply -auto-approve tfplan
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
