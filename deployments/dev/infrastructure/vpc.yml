@@ -15,10 +15,21 @@ vpc:
   
   # Gateway settings
   enable_nat_gateway: true
-  single_nat_gateway: true    # Tiết kiệm chi phí cho môi trường Dev
-  # one_nat_gateway_per_az: false
-  # reuse_nat_ips: true
-  # external_nat_ip_ids: []
+  single_nat_gateway: true # Tiết kiệm chi phí ở DEV
+
+  # Networking & Security (Full-Spec)
+  enable_dns_hostnames: true
+  enable_dns_support: true
+  enable_vpn_gateway: false
+  manage_default_network_acl: false
+
+  # Tags Subnet để nhận diện (Standard Tags)
+  public_subnet_tags:
+    "Tier": "public"
+    "type": "public"
+  private_subnet_tags:
+    "Tier": "private"
+    "type": "private"
 
   # DNS Settings
   enable_dns_hostnames: true
