@@ -12,7 +12,7 @@ module "kms" {
 
 module "secrets_manager" {
   count         = lookup(local.config.secrets_manager, "enabled", false) ? 1 : 0
-  source        = "../../../terraform-module/modules/secrets-manager"
+  source        = "../../../terraform-module/modules/secrets_manager"
   config_file   = basename(var.config_path)
   global_config = local.config.global
   tags          = local.tags

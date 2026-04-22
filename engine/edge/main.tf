@@ -4,7 +4,7 @@
 
 module "route53" {
   count         = local.dns_enabled ? 1 : 0
-  source        = "../../../terraform-module/modules/route53"
+  source        = "../../../terraform-module/modules/dns"
   config_file   = basename(var.config_path)
   global_config = local.config.global
   tags          = local.tags
